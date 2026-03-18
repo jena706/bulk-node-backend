@@ -13,40 +13,30 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'bulk-backend', version: '1.0.0' });
 });
 
+// Proxy account requests with 15s timeout
 app.post('/proxy/account', async (req, res) => {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(`${BULK_API}/account`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(req.body),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
     const data = await response.json();
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/proxy/ticker/:symbol', async (req, res) => {
-  try {
-    const response = await fetch(`${BULK_API}/ticker?symbol=${req.params.symbol}`);
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/proxy/info', async (req, res) => {
-  try {
-    const response = await fetch(`${BULK_API}/exchangeInfo`);
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (err.name === 'AbortError') {
+      res.status(504).json({ error: 'Bulk Trade API timeout' });
+    } else {
+      res.status(500).json({ error: err.message });
+    }
   }
 });
 
 app.listen(PORT, () => {
   console.log(`Bulk backend proxy running on port ${PORT}`);
 });
+
