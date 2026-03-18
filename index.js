@@ -13,11 +13,10 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, service: 'bulk-backend', version: '1.0.0' });
 });
 
-// Proxy account requests with 15s timeout
 app.post('/proxy/account', async (req, res) => {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
     const response = await fetch(`${BULK_API}/account`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,4 +38,3 @@ app.post('/proxy/account', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Bulk backend proxy running on port ${PORT}`);
 });
-
