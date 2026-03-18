@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true, service: 'bulk-backend' });
+  res.json({ ok: true, service: 'bulk-backend', version: '1.0.0' });
 });
 
 app.post('/proxy/account', async (req, res) => {
@@ -27,4 +27,26 @@ app.post('/proxy/account', async (req, res) => {
   }
 });
 
-app.get('/proxy/ticker/:symbol', async (req, res) =
+app.get('/proxy/ticker/:symbol', async (req, res) => {
+  try {
+    const response = await fetch(`${BULK_API}/ticker?symbol=${req.params.symbol}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/proxy/info', async (req, res) => {
+  try {
+    const response = await fetch(`${BULK_API}/exchangeInfo`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Bulk backend proxy running on port ${PORT}`);
+});
